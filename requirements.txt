@@ -1,4 +1,139 @@
-## Student Name:
-## Student ID: 
+## Student Name: Ryan Pelchat
+## Student ID: 218431957
 
-Requirements #1:
+Requirement #1:
+    The system shall receive working hours, list of existing busy intervals, required meeting duration, optional buffer time between meetings, optional time window to restrict candidate time slot suggestions and return a list of chronologically ordered appointment slots that satisfy all constraints for available time.
+
+Requirement #2:
+    The system shall accept a list of working hours in HH:MM format.
+
+Requirement #3:
+    The system shall accept a list of existing busy time intervals that include year, month, day, hour, and minutes.
+
+Requirement #4:
+    The system shall suggest time that fall within working hours and within the optional time window restriction.
+
+Requirement #5:
+    The system shall accept a meeting duration in minutes.
+
+Requirement #6:
+    The system shall optionally accept a buffer time in between meetings in minutes.
+
+Requirement #7:
+    The system shall optionally accept a time window to restrict time slot suggestions.
+
+Requirement #8:
+    The system shall return a list of chronologically ordered appointment slots that satisfy all constraints.
+
+Requirement #9:
+    The system shall only suggest slots that do not overlap busy intervals.
+
+Requirement #10:
+    The system shall not suggest time slots that overlap with buffer time.
+
+Requirement #11:
+    The system shall return the time slots suggestions in a deterministic way under identical inputs.
+
+Requirement #12:
+    The system shall return suggested time slots that are at least the duration of the minimum meeting duration.
+
+Requirement #13:
+    The system shall return suggested time slots that reflect the current system date.
+
+Requirement #14:
+    The system shall return the next N valid appointment suggestion time slot windows in chronological order.
+
+Requirement #15:
+    The system shall notify the user when there is no availability within the working window.
+
+Requirement #16:
+    The system shall only return time slot duration where in minutes are factors of 5 
+
+Constraints #1:
+    Working hours refer to the days between Monday to Friday.
+
+Constraints #2:
+    The system will accept a mix of strings and date time objects depending on input from GUI.
+
+Constraints #3:
+    Working days will be assumed to be Monday to Friday
+
+Constraints #4:
+    This is a multi-day calendar system, not a daily one.
+
+Constraints #5:
+    The required meeting duration is a set time for all meetings in minutes.
+
+Constraints #6:
+    The system is on 5 minute scale.
+
+Constraints #7:
+    The system shall respect national and provincial holidays and not suggest any meetings during then
+
+Constraints #8:
+    The system shall respect and take into account daylight savings time
+
+Constraints #9:
+    The system shall assume that we are in Canada and in the province of Ontario.
+
+Constraints #10:
+    The system will output N valid cases.
+
+Constraints #11:
+    The system assumes that the starting time is the current system time.
+
+Constraints #12:
+    The system shall not suggest time slots where there are no available time slots.
+
+Acceptance Criterion AC1:
+Given an input of string that represent date time, or just time
+When the user provides input
+Then the system will automatically convert this into a datetime object
+Linked Constraint ID(s): C2
+
+Acceptance Criterion AC2:
+Given a value of N.
+When the user inputs into the system.
+Then the system only outputs up to a maximum of N valid appointment suggestions in chronological order
+Linked Constraint ID(s): C10
+
+Acceptance Criterion AC3:
+Given a set of inputs that happen around daylight savings day
+When the user requests available time slots
+Then the system accurately shifts the time to account for daylight savings
+Linked Constraint ID(s): C8
+
+Acceptance Criterion AC4:
+Given a set of inputs that happen around a holliday
+When the user requests available time slots
+Then the system does not return time slot suggestions that happen on a holliday
+Linked Constraint ID(s): C7
+
+Acceptance Criterion AC5:
+Given a set of inputs
+When the user requests available time slots
+Then the system only return time slots with durations that are factors of 5
+Linked Constraint ID(s): C6
+
+Acceptance Criterion AC6:
+Given  a set of inputs
+When the user requests available time slots
+Then the system starts returning available time slots based on the current date and time of the system machine
+Linked Constraint ID(s): C11
+
+Acceptance Criterion AC7:
+Given a set of inputs
+When the user requests available time slots
+Then the system starts returning available time slots with no overlapping time slots
+Linked Constraint ID(s): C12
+
+Acceptance Criterion AC8:
+Given a set of inputs that happen around Saturday or Sunday
+When the user requests available time slots
+Then the system starts returning available time slots with no slots on Saturday or Sunday
+Linked Constraint ID(s): C1
+
+Edge Case EC1:
+Description: No overlapping slots
+Linked Constraint ID(s): C13
+Covered by Acceptance Criteria ID(s): AC7
