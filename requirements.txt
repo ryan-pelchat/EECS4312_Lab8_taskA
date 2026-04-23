@@ -1,4 +1,347 @@
-## Student Name:
-## Student ID: 
+## Student Name: Ryan Pelchat
+## Student ID: 218431957
 
-Requirements #1:
+## 1. Problem Understanding - Describe the problem your system solves.
+
+System purpose:
+The system recommends valid appointment slots within a working window by considering existing busy intervals, a required meeting duration, an optional buffer time, and an optional candidate time window.
+
+Inputs to the system:
+- working_hours: a start time and end time defining the working window
+- busy_intervals: a list of existing busy intervals
+- meeting_duration: the required duration of the appointment
+- buffer_time: an optional buffer time between meetings
+- candidate_window: an optional time window that further restricts suggestions
+- n: the maximum number of appointment suggestions to return
+
+Outputs produced by the system:
+- A chronologically ordered list of up to n valid appointment slots
+- If no valid slot exists, an explicit no-availability result
+- If fewer than n slots are returned, an explicit explanation of why fewer results were found
+
+Primary goal of the system:
+To provide reliable, deterministic, and conflict-free appointment suggestions that satisfy all scheduling constraints while remaining clear and predictable for both the primary user and the edge user.
+
+---
+## 2. Assumptions - List assumptions about the environment, users, or inputs.
+
+A1:
+All input times refer to the same calendar and time zone.
+
+A2:
+Each busy interval has a start time that is earlier than or equal to its end time.
+
+A3:
+meeting_duration, buffer_time, and n are non-negative integers.
+
+A4:
+If no candidate_window is provided, the system searches the entire working window.
+
+A5:
+The working window start time is earlier than the working window end time.
+
+A6:
+The system evaluates availability using the latest provided inputs only and does not retain outdated schedule state.
+
+A7:
+If busy intervals are unsorted or overlapping, the system is responsible for normalizing them before evaluating availability.
+
+A8:
+All returned appointment slots are represented using the same start/end format as the internal scheduling logic.
+
+---
+## 3. Functional Requirements - Describe the main behaviors the system must perform.
+
+FR1:
+The system shall accept working hours, busy intervals, a required meeting duration, an optional buffer time, an optional candidate time window, and n as inputs.
+
+FR2:
+The system shall return up to n valid appointment slots that fall within the working window and, if provided, within the candidate time window.
+
+FR3:
+The system shall exclude any slot that overlaps a busy interval or violates the required buffer time.
+(Persona-derived: Jane trusts the system to resolve conflicts and enforce rules automatically.)
+
+FR4:
+The system shall return appointment suggestions in deterministic chronological order under identical inputs.
+(Persona-derived: Jane needs predictable ordering; Mo needs deterministic behavior under ties/conflicts.)
+
+FR5:
+The system shall provide an explicit explanation when no valid slot exists or when fewer than n valid slots can be returned.
+(Persona-derived: Mo needs clear explanations and explicit handling instead of silent failure.)
+
+FR6:
+The system shall normalize unsorted, overlapping, or adjacent busy intervals before generating appointment suggestions.
+(Persona-derived: Mo needs explicit handling of edge cases instead of silent failure.)
+
+FR7:
+The system shall avoid returning duplicate appointment suggestions.
+(Persona-derived: Jane wants limited overload and no duplicate system messages.)
+
+FR8:
+The system shall recompute appointment suggestions whenever the inputs change and shall base the output only on the current input state.
+(Persona-derived: Mo performs frequent updates and expects consistent behavior.)
+
+---
+## 4. System Constraints - Constraints are conditions the system must always respect. Each constraint should reference the persona attribute it originates from.
+
+C1:
+Derived from persona attribute: Jane - Trusts the system to resolve conflicts and enforce rules automatically.
+The system must never return a slot that overlaps a busy interval or violates the required buffer time.
+
+C2:
+Derived from persona attribute: Jane - Predictable and stable ordering of system decisions.
+The system must produce deterministic chronological ordering for identical inputs.
+
+C3:
+Derived from persona attribute: Jane - Receiving too many notifications or duplicate system messages.
+The system must not return duplicate appointment suggestions.
+
+C4:
+Derived from persona attribute: Mo - Deterministic system behavior under ties or conflicting conditions.
+The system must apply a stable tie-breaking rule whenever multiple valid outcomes exist.
+
+C5:
+Derived from persona attribute: Mo - Clear explanations when actions are moved, skipped, or rejected.
+The system must provide explicit reasons when no slot is returned, when fewer than n slots are returned, or when a candidate slot is rejected.
+
+C6:
+Derived from persona attribute: Mo - Explicitly handle edge cases instead of silent failure.
+The system must correctly handle unsorted busy intervals, overlapping busy intervals, adjacent busy intervals, very small gaps, and no availability without silent failure.
+
+C7:
+Derived from persona attribute: Jane - Prefers concise outputs and minimal interaction when making decisions.
+The system must return only the next n valid slots and must not return unnecessary extra results.
+
+C8:
+Derived from persona attribute: Mo - Performs frequent updates and expects consistent behavior.
+The system must recompute availability based only on the latest input state after any update.
+
+---
+## 5. Acceptance Criteria - Acceptance criteria define how system behavior will be verified.
+
+AC1:
+Given valid working hours, busy intervals, meeting duration, optional buffer time, optional candidate window, and n
+When the system computes appointment suggestions
+Then it shall return at most n valid appointment slots in chronological order
+Linked Constraint ID(s): C2, C7
+
+AC2:
+Given one or more busy intervals and a required buffer time
+When the system computes appointment suggestions
+Then no returned slot shall overlap a busy interval or violate the buffer time
+Linked Constraint ID(s): C1
+
+AC3:
+Given the same inputs across repeated executions
+When the system computes appointment suggestions multiple times
+Then it shall return the same ordered results each time
+Linked Constraint ID(s): C2, C4
+
+AC4:
+Given busy intervals that are unsorted, overlapping, or adjacent
+When the system computes appointment suggestions
+Then it shall normalize those intervals and return only valid non-duplicate slots
+Linked Constraint ID(s): C3, C6
+
+AC5:
+Given that no valid slot exists or fewer than n valid slots exist
+When the system returns results
+Then it shall explicitly state that condition and provide the reason
+Linked Constraint ID(s): C5
+
+AC6:
+Given updated busy intervals, meeting duration, buffer time, candidate window, or n
+When the system is run again
+Then it shall recompute the result using only the latest input state
+Linked Constraint ID(s): C8
+
+AC7:
+Given multiple equally valid appointment slots
+When the system orders the results
+Then it shall apply the same stable tie-breaking rule every time
+Linked Constraint ID(s): C4
+
+AC8:
+Given a schedule where all free gaps are shorter than the required meeting duration
+When the system computes appointment suggestions
+Then it shall return an explicit no-availability result
+Linked Constraint ID(s): C5, C6
+
+---
+## 6. Edge Cases - Describe unusual or boundary situations the system must handle.
+
+EC1:
+Unsorted busy intervals are provided as input.
+Expected system behavior:
+The system shall normalize the intervals before evaluating availability and shall still return correct chronologically ordered results.
+(Persona-derived from Mo - explicit handling of edge cases.)
+
+EC2:
+Two or more busy intervals overlap each other.
+Expected system behavior:
+The system shall merge or correctly interpret the overlap so that no invalid slot is suggested.
+(Persona-derived from Mo - explicit handling of edge cases.)
+
+EC3:
+Two busy intervals are adjacent and leave no usable gap once buffer time is considered.
+Expected system behavior:
+The system shall not return a false available slot between the intervals.
+(Persona-derived from Mo - explicit handling of edge cases.)
+
+EC4:
+A free gap exists but it is shorter than the required meeting duration.
+Expected system behavior:
+The system shall reject the gap and, if no other valid slot exists, return an explicit no-availability result.
+
+EC5:
+No valid appointment slot exists within the working window or candidate window.
+Expected system behavior:
+The system shall return an explicit no-availability result instead of silently returning an unexplained empty output.
+(Persona-derived from Mo - no silent failure.)
+
+EC6:
+Multiple valid slots are equally feasible under the same input conditions.
+Expected system behavior:
+The system shall apply a deterministic tie-breaking rule and return the same ordering across repeated runs.
+(Persona-derived from Jane and Mo - predictable, deterministic behavior.)
+
+EC7:
+Input values are updated between two executions.
+Expected system behavior:
+The system shall recompute suggestions from the latest inputs only and shall not reuse stale results.
+(Persona-derived from Mo - frequent updates.)
+
+---
+## 7. Traceability - Link functional requirements to constraints and acceptance criteria. FR → C → AC mapping
+
+FR1 → C7 → AC1
+FR2 → C2, C7 → AC1
+FR3 → C1 → AC2
+FR4 → C2, C4 → AC3, AC7
+FR5 → C5 → AC5, AC8
+FR6 → C6, C3 → AC4
+FR7 → C3 → AC4
+FR8 → C8 → AC6
+
+---
+## Revision Notes
+Revision Note 1
+Requirement updated: FR4 – Deterministic ordering of appointment slots
+Reason: Original requirement did not explicitly define how ties are resolved when multiple valid slots exist, which could lead to inconsistent outputs.
+Action: Added explicit reference to stable tie-breaking rules (TBR1–TBR6).
+Triggered by LLM feedback: Yes
+
+Revision Note 2
+Requirement updated: FR5 – Explanation of results
+Reason: Initial requirement only mentioned explaining no availability, but did not cover cases where fewer than N results are returned or why specific slots are rejected.
+Action: Expanded requirement to include explanations for rejected slots and partial result sets.
+Triggered by LLM feedback: Yes
+
+Revision Note 3
+Requirement updated: FR6 – Normalization of busy intervals
+Reason: Missing explicit requirement to merge overlapping and adjacent intervals before evaluation, which could lead to incorrect availability detection.
+Action: Clarified that normalization must include sorting, merging overlaps, and handling adjacency.
+Triggered by LLM feedback: Yes
+
+Revision Note 4
+Requirement updated: C3 – Duplicate appointment prevention
+Reason: Duplicate slots could arise from multiple evaluation paths after normalization of intervals.
+Action: Strengthened constraint to explicitly require deduplication of output slots.
+Triggered by LLM feedback: Yes
+
+Revision Note 5
+Requirement updated: AC5 – Explanation for insufficient results
+Reason: Acceptance criteria did not explicitly require distinguishing between different causes (buffer, duration, candidate window).
+Action: Updated AC to require explicit reason categorization for fewer-than-N results.
+Triggered by LLM feedback: Yes
+
+Revision Note 6
+Requirement updated: EC4 – Small gap handling
+Reason: Edge case did not explicitly mention interaction with buffer time, which could invalidate otherwise valid gaps.
+Action: Expanded edge case to include buffer-eliminated gaps.
+Triggered by LLM feedback: Yes
+
+Revision Note 7
+Requirement updated: TBR2 – Tie-breaking on identical start times
+Reason: Missing clarity on how to prioritize slots with identical start times but different durations.
+Action: Added rule to prefer earliest end time.
+Triggered by LLM feedback: Yes
+
+Revision Note 8
+Requirement updated: AC4 – Handling unsorted and overlapping intervals
+Reason: Acceptance criteria did not explicitly verify deduplication alongside normalization.
+Action: Updated AC to validate both normalization and duplicate prevention.
+Triggered by LLM feedback: Yes
+
+Revision Note 9
+Requirement updated: C5 – Explanation requirement
+Reason: Constraint did not explicitly prohibit silent empty outputs.
+Action: Strengthened constraint to require explicit no-availability messaging.
+Triggered by LLM feedback: Yes
+
+Revision Note 10
+Requirement updated: FR2 – Output definition
+Reason: Output format did not clearly specify start/end representation for each slot, causing ambiguity for implementation.
+Action: Clarified that each slot must include both start and end datetime values.
+Triggered by LLM feedback: Yes
+
+Revision Note 11
+Requirement updated: Input Validation – Time Granularity Enforcement
+Reason: While implementation enforces 5-minute granularity for duration and buffer, there was no explicit requirement ensuring busy intervals and working hours also conform to this constraint, which may lead to inconsistent behavior.
+Action: Added requirement that all input times (working hours, busy intervals, candidate window) must align to 5-minute increments or be normalized.
+Triggered by LLM feedback: Yes
+
+Revision Note 12
+Requirement updated: FR5 – Explanation of Results (Return Mechanism)
+Reason: The current function signature does not allow returning explanations, which conflicts with the requirement that explanations must be provided.
+Action: Clarified that explanations must be internally generated and optionally exposed via extended data models or logging without breaking the existing interface.
+Triggered by LLM feedback: Yes
+
+Revision Note 13
+Requirement updated: C1 – Buffer Constraint Enforcement
+Reason: Ambiguity existed on whether buffer applies before, after, or both sides of busy intervals.
+Action: Explicitly defined that buffer must be applied symmetrically before and after each busy interval.
+Triggered by LLM feedback: Yes
+
+Revision Note 14
+Requirement updated: FR2 – Slot Representation Consistency
+Reason: Although SlotDetail includes start and end, the primary Slot model only exposes start_time, which may create inconsistency with requirements.
+Action: Clarified that internal logic must always compute both start and end times, even if only start_time is returned externally.
+Triggered by LLM feedback: Yes
+
+Revision Note 15
+Requirement updated: EC7 – Re-computation on Input Change
+Reason: Requirement did not explicitly forbid caching or reuse of stale results, which could violate deterministic correctness.
+Action: Added explicit constraint that no cached or previous results may be reused across calls.
+Triggered by LLM feedback: Yes
+
+Revision Note 16
+Requirement updated: TBR5 – Future Availability Preservation
+Reason: Tie-breaking rule for preserving future availability was defined but not implemented in the system, creating inconsistency between specification and behavior.
+Action: Clarified that this rule is optional unless explicitly required by system configuration; default behavior falls back to earliest end time.
+Triggered by LLM feedback: Yes
+
+Revision Note 17
+Requirement updated: FR3 – Overlap Handling Precision
+Reason: Overlap definition did not explicitly specify boundary conditions (e.g., end == start).
+Action: Clarified that intervals are treated as [start, end) to ensure adjacent intervals do not overlap but also do not create false gaps with buffer.
+Triggered by LLM feedback: Yes
+
+Revision Note 18
+Requirement updated: C6 – Edge Case Handling Completeness
+Reason: Edge cases did not explicitly include invalid candidate window (start >= end).
+Action: Added requirement to safely return no availability when candidate window is invalid.
+Triggered by LLM feedback: Yes
+
+Revision Note 19
+Requirement updated: AC1 – Chronological Ordering Validation
+Reason: Acceptance criteria did not explicitly validate secondary ordering (end time) when start times are equal.
+Action: Extended AC to verify ordering by (start_time, end_time) for full determinism.
+Triggered by LLM feedback: Yes
+
+Revision Note 20
+Requirement updated: FR1 – Input Domain Constraints
+Reason: Missing explicit constraint that n must be non-negative and duration must be greater than zero.
+Action: Added explicit validation requirement for all numeric inputs.
+Triggered by LLM feedback: Yes
